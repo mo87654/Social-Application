@@ -2,11 +2,20 @@ abstract class SocialStates {}
 
 class SocialInitialState extends SocialStates {}
 
+//get user data
 class GetUserDataLoadingState extends SocialStates {}
 class GetUserDataSuccessState extends SocialStates {}
 class GetUserDataErrorState extends SocialStates {
   final String error;
   GetUserDataErrorState(this.error);
+}
+
+//get all users data(chat)
+class GetAllUsersDataLoadingState extends SocialStates {}
+class GetAllUsersDataSuccessState extends SocialStates {}
+class GetAllUsersDataErrorState extends SocialStates {
+  final String error;
+  GetAllUsersDataErrorState(this.error);
 }
 
 class UpdateUserDataLoadingState extends SocialStates {}
@@ -26,6 +35,14 @@ class CoverPickedErrorState extends SocialStates {}
 
 class CoverUploadSuccessState extends SocialStates {}
 class CoverUploadErrorState extends SocialStates {}
+
+//pick an image to send
+class MessageImagePickedSuccessState extends SocialStates {}
+class MessageImagePickedErrorState extends SocialStates {}
+
+//upload the chat image
+class MessageImageUploadSuccessState extends SocialStates {}
+class MessageImageUploadErrorState extends SocialStates {}
 
 class UpdateProfileLoadingState extends SocialStates {}
 class UpdateProfileSuccessState extends SocialStates {}
@@ -73,3 +90,13 @@ class AddCommentErrorState extends SocialStates {}
 class GetCommentLoadingState extends SocialStates {}
 class GetCommentSuccessState extends SocialStates {}
 class GetCommentErrorState extends SocialStates {}
+
+//send message
+class SendMessageLoadingState extends SocialStates {}
+class SendMessageSuccessState extends SocialStates {}
+class SendMessageErrorState extends SocialStates {}
+
+//get messages
+class GetMessagesLoadingState extends SocialStates {}
+//change sent button icon
+class ChangeButtonIconState extends SocialStates {}

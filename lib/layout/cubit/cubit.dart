@@ -1,21 +1,25 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:social_application/layout/cubit/states.dart';
 import 'package:social_application/models/comment_model.dart';
+import 'package:social_application/models/message_model.dart';
 import 'package:social_application/models/post_model.dart';
 import 'package:social_application/models/user_model.dart';
 import 'package:social_application/modules/add%20post/add_post_screen.dart';
 import 'package:social_application/modules/chats/chats_screen.dart';
 import 'package:social_application/modules/home/feeds_screen.dart';
+import 'package:social_application/modules/image_view/image_view_screen.dart';
 import 'package:social_application/modules/setting/setting_screen.dart';
 import 'package:social_application/modules/users/users_screen.dart';
 import 'package:social_application/shared/components/components.dart';
 import 'package:social_application/shared/components/constants.dart';
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
+import 'package:social_application/shared/styles/icon_broken.dart';
 
 class SocialCubit extends Cubit<SocialStates> {
   SocialCubit():super(SocialInitialState());
@@ -50,7 +54,10 @@ class SocialCubit extends Cubit<SocialStates> {
     SettingScreen()
   ];
 
-  changeButtonNavBar(index, context){
+  changeButtonNavBar(int index,BuildContext context){
+    if(index == 1){
+      getAllUSers();
+    }
    if(index == 2){
     navigateTo(context, AddPostScreen());
    }else{
@@ -242,19 +249,19 @@ class SocialCubit extends Cubit<SocialStates> {
   updateProfileImageInAllTheApp(String profile) async {
     WriteBatch batch = FirebaseFirestore.instance.batch();
     CollectionReference collRef = FirebaseFirestore.instance.collection('Posts');
-    collRef.where('uid',isEqualTo: uid).get().then((value){
-      value.docs.forEach((element){
+    await collRef.where('uid',isEqualTo: uid).get().then((value){
+      for (var element in value.docs) {
         batch.update(element.reference, {'image':profile});
-      });
+      }
     }).catchError((error){});
-    collRef.get().then((value){
-      value.docs.forEach((element){
-        element.reference.collection('Comments').where('uid',isEqualTo: uid).get().then((value){
-          value.docs.forEach((element){
+    await collRef.get().then((value) async {
+      for(var element in value.docs) {
+        await element.reference.collection('Comments').where('uid',isEqualTo: uid).get().then((value){
+          for (var element in value.docs) {
             batch.update(element.reference, {'image':profile});
-          });
+          }
         });
-      });
+      }
     });
     await batch.commit();
     getPosts();
@@ -363,6 +370,7 @@ class SocialCubit extends Cubit<SocialStates> {
       emit(GetPostsLoadingState());
       FirebaseFirestore.instance
           .collection('Posts')
+          .orderBy('dateTime',descending: true)
           .get().then((value){
             value.docs.forEach((element){
               List<String> likesDocId = [];
@@ -449,6 +457,7 @@ class SocialCubit extends Cubit<SocialStates> {
     .collection('Posts')
     .doc(postID[index])
     .collection('Comments')
+    .orderBy('dateTime')
     .get().then((value){
       for (var element in value.docs) {
         comments.add(CommentModel.fromJson(element.data()));
@@ -459,5 +468,134 @@ class SocialCubit extends Cubit<SocialStates> {
     });
   }
 
+  List<UserModel> users = [];
+  getAllUSers(){
+    if(users.isEmpty){
+      emit(GetAllUsersDataLoadingState());
+      FirebaseFirestore.instance
+      .collection('Users')
+      .where('uid', isNotEqualTo: uid)
+      .get().then((value){
+        for (var element in value.docs) {
+          users.add(UserModel.fromJson(element.data()));
+        }
+        emit(GetAllUsersDataSuccessState());
+      }).catchError((error){
+        emit(GetAllUsersDataErrorState(error.toString()));
+      });
+    }
+  }
+
+  sendMessage({
+    required String receiverUid,
+    required String senderUid,
+    required String text,
+    required String imageUrl,
+  }){
+    emit(SendMessageLoadingState());
+    MessageModel model = MessageModel(
+      senderUid: senderUid, 
+      receiverUid: receiverUid, 
+      dateTime: Timestamp.now(), 
+      text: text, 
+      imageUrl: imageUrl
+    );
+    FirebaseFirestore.instance
+      .collection('Users')
+      .doc(uid)
+      .collection('Chats')
+      .doc(receiverUid)
+      .collection('Messages')
+      .add(model.toMap()).then((value){
+        emit(SendMessageSuccessState());
+      }).catchError((error){
+        emit(SendMessageErrorState());
+      });
+    FirebaseFirestore.instance
+      .collection('Users')
+      .doc(receiverUid)
+      .collection('Chats')
+      .doc(uid)
+      .collection('Messages')
+      .add(model.toMap()).then((value){
+        emit(SendMessageSuccessState());
+      }).catchError((error){
+        emit(SendMessageErrorState());
+      });
+  }
+
+  List<MessageModel> messages = [];
+  getMessages(String chatUid){
+    FirebaseFirestore.instance
+      .collection('Users')
+      .doc(uid)
+      .collection('Chats')
+      .doc(chatUid)
+      .collection('Messages')
+      .orderBy('dateTime')
+      .snapshots()
+      .listen((event){
+        messages.clear();
+        for (var element in event.docs) {
+          if(event.size>0 && messages.isEmpty){
+            emit(GetMessagesLoadingState());
+          }
+          messages.add(MessageModel.fromJson(element.data()));
+        }
+      });
+  }
+
+  String formatTime(DateTime dateTime){
+    int hour = dateTime.hour;
+    int minute = dateTime.minute;
+    String period = hour >= 12 ? 'PM' : 'AM';
+    hour = hour > 12 ? hour - 12 : hour == 0 ? 12 : hour;
+    String formattedTime = '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
+    return formattedTime;
+  }
+
+  bool sendIcon = false;
+  changeChatButton(String controller){
+    if(controller.trim().isNotEmpty){
+      sendIcon = true;
+      emit(ChangeButtonIconState());
+    }else{
+      sendIcon = false;
+      emit(ChangeButtonIconState());
+    }
+  }
+
+  File? messageImage;
+  Future<void> getmessageImage(BuildContext context, UserModel model) async
+  {
+    final pickedFile = await picker.pickImage(
+     source: ImageSource.gallery,
+    );
+    if (pickedFile != null)
+    {
+      messageImage = File(pickedFile.path);
+      emit(MessageImagePickedSuccessState());
+      navigateTo(context, ImageViewScreen(model));
+    } else
+      {
+       emit(MessageImagePickedErrorState());
+       print( 'No image selected.');
+      }
+  }
+
+  Future<String?> uploadmessageImage(String receiverUid) async {
+    String? messageImageURL;
+    await firebase_storage.FirebaseStorage.instance
+        .ref()
+        .child('users/$uid/messageImage/$receiverUid/${Uri.file(messageImage!.path).pathSegments.last}')
+        .putFile(messageImage!)
+        .then((value) async {
+          emit(MessageImageUploadSuccessState());
+ 			    messageImageURL = await value.ref.getDownloadURL();
+        }).catchError((error) {
+         emit(MessageImageUploadErrorState());
+        });  
+    return messageImageURL;
+  }
 
 }

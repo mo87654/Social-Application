@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,7 +8,7 @@ import 'package:social_application/shared/styles/icon_broken.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class FeedScreen extends StatelessWidget {
-  FeedScreen({Key? key}) : super(key: key);
+  FeedScreen({super.key});
 
   var commentController = TextEditingController();
 
@@ -85,7 +83,8 @@ class FeedScreen extends StatelessWidget {
                       },
                       icon: const Icon(
                         IconBroken.More_Circle,
-                      ))
+                      )
+                  )
                 ],
               ),
               Container(
@@ -410,126 +409,138 @@ class FeedScreen extends StatelessWidget {
         child: DraggableScrollableSheet(
             expand: false,
             builder: (BuildContext context, ScrollController scrollController) =>
-                Stack(
+                Column(
                   children: [
                     if (state is GetCommentLoadingState)
-                      const Center(
-                        child: CircularProgressIndicator(),
+                      const Expanded(
+                        child: Center(
+                          child: CircularProgressIndicator(),
+                        ),
                       )
                     else
                       model.comments.isEmpty
-                          ? const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.comments_disabled,
-                                    size: 70,
-                                    color: Colors.grey,
-                                  ),
-                                  Text(
-                                    'No Comments',
-                                    style: TextStyle(
+                          ? const Expanded(
+                            child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.comments_disabled,
+                                      size: 70,
                                       color: Colors.grey,
                                     ),
-                                  )
-                                ],
+                                    Text(
+                                      'No Comments',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    )
+                                  ],
+                                ),
                               ),
-                            )
-                          : SingleChildScrollView(
-                              padding: const EdgeInsets.only(
-                                top: 30,
-                                right: 10,
-                                left: 10,
-                              ),
-                              controller: scrollController,
-                              // padding: const EdgeInsets.only(top: 30, right: 20, left: 20, bottom: MediaQuery.of(context).viewInsets,),
-                              // decoration: const BoxDecoration(
-                              //   color: Colors.white,
-                              //   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                              // ),
-                              // clipBehavior: Clip.antiAliasWithSaveLayer,
-                              child: Column(
-                                children: [
-                                  ListView.separated(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemBuilder: (context, index) => Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        CircleAvatar(
-                                          radius: 24,
-                                          backgroundImage: NetworkImage(
-                                              '${model.comments[index].image}'),
-                                        ),
-                                        const SizedBox(
-                                          width: 10,
-                                        ),
-                                        Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Container(
-                                                padding:
-                                                    const EdgeInsets.all(10),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.grey[200],
-                                                  borderRadius:
-                                                      BorderRadius.circular(15),
-                                                ),
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      '${model.comments[index].name}',
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .titleMedium,
-                                                    ),
-                                                    const SizedBox(
-                                                      height: 7,
-                                                    ),
-                                                    Text(
-                                                      '${model.comments[index].text}',
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium,
-                                                    ),
-                                                  ],
-                                                )),
-                                            Text(
-                                              timeago.format(model
-                                                  .comments[index].dateTime!
-                                                  .toDate()),
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall,
-                                            ),
-                                          ],
-                                        ),
-                                      ],
+                          )
+                          : Expanded(
+                            child: SingleChildScrollView(
+                                padding: const EdgeInsets.only(
+                                  top: 30,
+                                  right: 10,
+                                  left: 10,
+                                ),
+                                controller: scrollController,
+                                // padding: const EdgeInsets.only(top: 30, right: 20, left: 20, bottom: MediaQuery.of(context).viewInsets,),
+                                // decoration: const BoxDecoration(
+                                //   color: Colors.white,
+                                //   borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                                // ),
+                                // clipBehavior: Clip.antiAliasWithSaveLayer,
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Comments',
+                                      style: Theme.of(context).textTheme.titleLarge
                                     ),
-                                    separatorBuilder: (context, index) =>
-                                        const SizedBox(
-                                      height: 25,
+                                    const SizedBox(height: 5,),
+                                    Divider(color: Colors.grey[300],),
+                                    const SizedBox(height: 10,),
+                                    ListView.separated(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemBuilder: (context, index) => Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 24,
+                                            backgroundImage: NetworkImage(
+                                                '${model.comments[index].image}'),
+                                          ),
+                                          const SizedBox(
+                                            width: 10,
+                                          ),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Container(
+                                                  padding:
+                                                      const EdgeInsets.all(10),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey[200],
+                                                    borderRadius:
+                                                        BorderRadius.circular(15),
+                                                  ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment.start,
+                                                    children: [
+                                                      Text(
+                                                        '${model.comments[index].name}',
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .titleMedium,
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 7,
+                                                      ),
+                                                      Text(
+                                                        '${model.comments[index].text}',
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodyMedium,
+                                                      ),
+                                                    ],
+                                                  )),
+                                              Text(
+                                                timeago.format(model
+                                                    .comments[index].dateTime!
+                                                    .toDate()),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall,
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(
+                                        height: 25,
+                                      ),
+                                      itemCount: model.comments.length,
                                     ),
-                                    itemCount: model.comments.length,
-                                  ),
-                                  const SizedBox(
-                                    height: 100,
-                                  ),
-                                ],
+                                    const SizedBox(
+                                      height: 100,
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                        height: 80,
-                        width: double.infinity,
-                        color: Colors.white,
+                          ),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 160
+                      ),
+                      child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: TextFormField(
                           controller: commentController,
@@ -544,6 +555,7 @@ class FeedScreen extends StatelessWidget {
                             return null;
                           },
                           decoration: InputDecoration(
+                            hintText: 'Type Your Comment',
                             enabledBorder: const OutlineInputBorder(),
                             border: const OutlineInputBorder(),
                             suffixIcon: IconButton(
